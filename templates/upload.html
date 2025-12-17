@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Video Analytics Tester</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .container { background: #f5f5f5; padding: 20px; border-radius: 8px; }
+        .form-group { margin-bottom: 15px; }
+        input[type="file"] { margin-top: 5px; }
+        button { 
+            background: #4CAF50; 
+            color: white; 
+            padding: 10px 15px; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer; 
+        }
+        button:hover { background: #45a049; }
+        #result { margin-top: 20px; padding: 15px; border-radius: 4px; }
+        .success { background: #dff0d8; color: #3c763d; }
+        .error { background: #f2dede; color: #a94442; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Video Analytics Tester</h1>
+        <form id="uploadForm" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="file">Upload a video file (MP4, AVI, MOV):</label><br>
+                <input type="file" id="file" name="file" accept="video/*" required>
+            </div>
+            <button type="submit">Process Video</button>
+        </form>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData();
+            const fileInput = document.getElementById('file');
+            const resultDiv = document.getElementById('result');
+            
+            formData.append('file', fileInput.files[0]);
+            
+            try {
+                resultDiv.className = '';
+                resultDiv.textContent = 'Processing video...';
+                
+                const response = await fetch('/process/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.className = 'success';
+                    resultDiv.innerHTML = `
+                        <h3>Video Processed Successfully!</h3>
+                        <p>Filename: ${data.filename}</p>
+                        <p>File Size: ${(data.file_size / (1024 * 1024)).toFixed(2)} MB</p>
+                        <h4>Video Properties:</h4>
+                        <ul>
+                            <li>Resolution: ${data.video_properties.width} x ${data.video_properties.height}</li>
+                            <li>FPS: ${data.video_properties.fps.toFixed(2)}</li>
+                            <li>Frames: ${data.video_properties.frame_count}</li>
+                            <li>Duration: ${data.video_properties.duration_seconds.toFixed(2)} seconds</li>
+                        </ul>
+                    `;
+                } else {
+                    throw new Error(data.detail || 'Unknown error occurred');
+                }
+            } catch (error) {
+                resultDiv.className = 'error';
+                resultDiv.textContent = `Error: ${error.message}`;
+            }
+        });
+    </script>
+</body>
+</html>
